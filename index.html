@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Virtual Profesor Z - Wujud Zat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .bounce-in {
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .star-spin {
+            animation: spinStar 2s linear infinite;
+        }
+        @keyframes spinStar {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .btn-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .btn-hover:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- Main Game Container -->
+    <div id="game-container" class="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative overflow-hidden bounce-in">
+        
+        <!-- Header (Stars & Name) -->
+        <div id="header" class="hidden flex justify-between items-center mb-6 bg-blue-50 p-3 rounded-2xl border-2 border-blue-200">
+            <div class="font-bold text-blue-800 text-lg flex items-center gap-2">
+                🧑‍🔬 <span id="display-name">Ilmuwan</span>
+            </div>
+            <div class="font-bold text-yellow-600 text-xl flex items-center gap-2">
+                <span id="star-count">0</span> <span class="text-2xl star-spin">⭐</span>
+            </div>
+        </div>
+
+        <!-- SCREEN 1: Welcome -->
+        <div id="screen-welcome" class="text-center py-4">
+            <div class="text-7xl mb-4">🧑‍🔬</div>
+            <h1 class="text-3xl font-black text-blue-600 mb-2">Halo, Ilmuwan Cilik!</h1>
+            <p class="text-gray-600 text-lg mb-6">Aku Profesor Z! Selamat datang di Laboratorium Virtual kita. Siapa namamu?</p>
+            
+            <input type="text" id="player-name" placeholder="Ketik namamu di sini..." 
+                class="w-full text-center border-4 border-blue-200 rounded-xl px-4 py-3 text-xl focus:outline-none focus:border-blue-400 mb-6 transition-colors">
+            
+            <button onclick="startGame()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-xl btn-hover shadow-lg shadow-blue-200">
+                Mulai Petualangan! 🚀
+            </button>
+        </div>
+
+        <!-- SCREEN 2: Dialogue / Transition -->
+        <div id="screen-dialogue" class="hidden text-center py-4">
+            <div class="text-7xl mb-4" id="dialogue-emoji">🧑‍🔬</div>
+            <div class="bg-blue-50 border-4 border-blue-100 rounded-2xl p-5 mb-6 relative">
+                <!-- Speech bubble pointer -->
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[20px] border-b-blue-100"></div>
+                <p id="dialogue-text" class="text-lg text-blue-900 font-semibold leading-relaxed">
+                    Teks Profesor Z di sini...
+                </p>
+            </div>
+            <button id="dialogue-btn" onclick="nextStage()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl text-xl btn-hover shadow-lg shadow-green-200">
+                Lanjut! ➡️
+            </button>
+        </div>
+
+        <!-- SCREEN 3: Quiz / Interactive -->
+        <div id="screen-quiz" class="hidden text-center py-2">
+            <h2 id="quiz-question" class="text-xl font-bold text-gray-800 mb-6 bg-yellow-50 p-4 rounded-2xl border-2 border-yellow-200">
+                Pertanyaan di sini...
+            </h2>
+            
+            <div id="quiz-options" class="grid grid-cols-1 gap-3">
+                <!-- Options will be injected here via JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        let playerName = "";
+        let stars = 0;
+        let currentQuestionIndex = 0;
+        
+        // --- GAME DATA ---
+        // Alur: 1-2 (Wujud), 3-6 (Perubahan Wujud)
+        const story = [
+            {
+                type: "dialogue",
+                text: "Senang bertemu denganmu, {name}! Di lab ini, kita akan belajar tentang Wujud Zat. Di bumi ini, benda-benda punya 3 wujud lho: Padat, Cair, dan Gas. Siap untuk misi pertamamu?",
+                btnText: "Siap, Prof! 🫡"
+            },
+            {
+                type: "quiz",
+                question: "Misi 1: Coba lihat sirup manis di dalam gelas ini. Termasuk wujud zat apakah sirup itu?",
+                options: [
+                    { text: "Padat 🧱", isCorrect: false, clue: "Ups! Kalau padat keras seperti batu. Sirup kan bisa dituang." },
+                    { text: "Cair 💧", isCorrect: true, reply: "Tepat sekali! Zat cair bentuknya selalu mengikuti wadahnya." },
+                    { text: "Gas ☁️", isCorrect: false, clue: "Hihi, gas itu seperti udara di dalam balon. Sirup masih bisa kamu sentuh dan minum." }
+                ]
+            },
+            {
+                type: "quiz",
+                question: "Misi 2: Bagus! Sekarang, bagaimana dengan udara yang kamu tiupkan ke dalam balon pesta?",
+                options: [
+                    { text: "Padat 🧱", isCorrect: false, clue: "Masa udara sekeras kayu? Coba lagi!" },
+                    { text: "Cair 💧", isCorrect: false, clue: "Udara tidak basah seperti air, lho!" },
+                    { text: "Gas ☁️", isCorrect: true, reply: "Hebat! Gas akan mengisi seluruh ruangan di dalam balon." }
+                ]
+            },
+            {
+                type: "dialogue",
+                text: "Luar biasa! Kamu sudah paham Padat, Cair, dan Gas. Nah, zat-zat ini bisa berubah wujud lho kalau dipanaskan atau didinginkan! Mari kita selidiki!",
+                btnText: "Ayo Menyelidik! 🔍"
+            },
+            {
+                type: "quiz",
+                question: "Kasus 1: Cokelat batangan kesukaanmu tertinggal di mobil yang sangat panas saat siang hari. Apa yang terjadi pada cokelat itu?",
+                options: [
+                    { text: "Membeku (Cair -> Padat)", isCorrect: false, clue: "Mobilnya sangat panas, bukan seperti kulkas. Coba tebak lagi!" },
+                    { text: "Mencair (Padat -> Cair)", isCorrect: true, reply: "Betul! Cokelat padat terkena panas (kalor) akan meleleh atau mencair!" },
+                    { text: "Menguap (Cair -> Gas)", isCorrect: false, clue: "Cokelatnya tidak terbang jadi asap kok. Cari yang lain!" }
+                ]
+            },
+            {
+                type: "quiz",
+                question: "Kasus 2: Kalau kamu punya air minum, lalu kamu masukkan ke dalam *freezer* kulkas semalaman. Paginya akan menjadi es batu. Proses apa ini?",
+                options: [
+                    { text: "Membeku", isCorrect: true, reply: "Keren! Air kehilangan panas di freezer, sehingga membeku jadi es padat!" },
+                    { text: "Mengembun", isCorrect: false, clue: "Bukan embun. Ini dari cair berubah jadi sangat keras." },
+                    { text: "Menyublim", isCorrect: false, clue: "Ini bukan sulap yang langsung hilang. Dia jadi es batu." }
+                ]
+            },
+            {
+                type: "quiz",
+                question: "Kasus 3: Ibu sedang memasak air. Saat mendidih, muncul 'asap putih' yang melayang ke atas. Air berubah menjadi gas. Disebut apakah itu?",
+                options: [
+                    { text: "Mengembun", isCorrect: false, clue: "Kebalikannya! Ini air dipanaskan, bukan didinginkan." },
+                    { text: "Mengkristal", isCorrect: false, clue: "Tidak jadi kristal es, udaranya panas lho!" },
+                    { text: "Menguap", isCorrect: true, reply: "Pintar! Air panas (cair) akan menguap menjadi uap air (gas)." }
+                ]
+            },
+            {
+                type: "quiz",
+                question: "Kasus 4: Pagi hari, kamu melihat rumput di halaman basah padahal semalam tidak hujan. Ini uap air di udara yang mendingin lalu jadi titik air. Namanya?",
+                options: [
+                    { text: "Mengembun", isCorrect: true, reply: "Sempurna! Gas yang mendingin akan mengembun menjadi benda cair." },
+                    { text: "Menyublim", isCorrect: false, clue: "Bukan, coba ingat-ingat nama air di pagi hari..." },
+                    { text: "Mencair", isCorrect: false, clue: "Bukan dari es batu lho, tapi dari uap air di udara." }
+                ]
+            },
+            {
+                type: "dialogue",
+                text: "Kamu berhasil menyelesaikan semua misi pengamatan dengan sempurna! Kamu adalah Ilmuwan Cilik kebanggaan Profesor Z! Teruslah mengamati sekitarmu ya!",
+                btnText: "Main Lagi 🔄"
+            }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const screens = {
+            welcome: document.getElementById('screen-welcome'),
+            dialogue: document.getElementById('screen-dialogue'),
+            quiz: document.getElementById('screen-quiz')
+        };
+        const header = document.getElementById('header');
+        const starCount = document.getElementById('star-count');
+        const displayName = document.getElementById('display-name');
+
+        // --- FUNCTIONS ---
+        function hideAllScreens() {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+        }
+
+        function startGame() {
+            const inputName = document.getElementById('player-name').value.trim();
+            if (!inputName) {
+                // Shake effect if empty
+                document.getElementById('player-name').classList.add('animate-pulse', 'border-red-400');
+                setTimeout(() => document.getElementById('player-name').classList.remove('animate-pulse', 'border-red-400'), 500);
+                return;
+            }
+            playerName = inputName;
+            displayName.innerText = playerName;
+            
+            header.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            stars = 0;
+            updateStars();
+            
+            showStep();
+        }
+
+        function updateStars() {
+            starCount.innerText = stars;
+        }
+
+        function showStep() {
+            hideAllScreens();
+            
+            if (currentQuestionIndex >= story.length) {
+                // Game Over / Restart
+                startGame(); 
+                return;
+            }
+
+            const stepData = story[currentQuestionIndex];
+
+            if (stepData.type === "dialogue") {
+                screens.dialogue.classList.remove('hidden');
+                document.getElementById('dialogue-emoji').innerText = "🧑‍🔬";
+                document.getElementById('dialogue-text').innerText = stepData.text.replace("{name}", playerName);
+                document.getElementById('dialogue-btn').innerText = stepData.btnText;
+                
+                // If it's the last dialogue, change action
+                if (currentQuestionIndex === story.length - 1) {
+                    document.getElementById('dialogue-btn').onclick = () => {
+                        location.reload(); // Simple reset
+                    };
+                } else {
+                    document.getElementById('dialogue-btn').onclick = nextStage;
+                }
+
+            } else if (stepData.type === "quiz") {
+                screens.quiz.classList.remove('hidden');
+                document.getElementById('quiz-question').innerText = stepData.question;
+                
+                const optionsContainer = document.getElementById('quiz-options');
+                optionsContainer.innerHTML = "";
+                
+                stepData.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full bg-white border-4 border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-blue-800 font-bold py-4 rounded-xl text-lg btn-hover text-left px-6 shadow-sm";
+                    btn.innerText = opt.text;
+                    btn.onclick = () => handleAnswer(opt, btn);
+                    optionsContainer.appendChild(btn);
+                });
+            }
+        }
+
+        function handleAnswer(option, buttonElement) {
+            hideAllScreens();
+            screens.dialogue.classList.remove('hidden');
+            
+            if (option.isCorrect) {
+                stars += 1;
+                updateStars();
+                document.getElementById('dialogue-emoji').innerText = "🤩";
+                document.getElementById('dialogue-text').innerHTML = `Wah Hebat, ${playerName}! 🌟<br><br>${option.reply}`;
+                document.getElementById('dialogue-btn').innerText = "Misi Selanjutnya ➡️";
+                document.getElementById('dialogue-btn').onclick = nextStage;
+            } else {
+                document.getElementById('dialogue-emoji').innerText = "🤔";
+                document.getElementById('dialogue-text').innerHTML = `Teeet! Kurang tepat!<br><br><strong>Clue Prof Z:</strong> ${option.clue}`;
+                document.getElementById('dialogue-btn').innerText = "Coba Tebak Lagi 🔄";
+                document.getElementById('dialogue-btn').onclick = () => {
+                    hideAllScreens();
+                    screens.quiz.classList.remove('hidden');
+                };
+            }
+        }
+
+        function nextStage() {
+            currentQuestionIndex++;
+            showStep();
+        }
+
+        // Allow pressing Enter on welcome screen
+        document.getElementById('player-name').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+    </script>
+</body>
+</html>
