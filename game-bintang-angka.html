@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101935">
+  <title>Misi Bintang Angka</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101935;
+      color: #f7f8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(ellipse at top, #263d75 0%, #101935 62%);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .game {
+      width: min(100%, 620px);
+      padding: clamp(22px, 5vw, 42px);
+      border: 1px solid #ffffff24;
+      border-radius: 28px;
+      background: #182448eF;
+      box-shadow: 0 24px 80px #050a1c88;
+    }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 25px; }
+    .brand { color: #b7c8ff; font-size: .85rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .score { padding: 9px 14px; border: 1px solid #ffffff25; border-radius: 999px; background: #ffffff0b; font-weight: 800; }
+    h1 { margin: 0 0 10px; font-size: clamp(2rem, 8vw, 3.2rem); line-height: 1.05; letter-spacing: -.04em; }
+    .intro { margin: 0 0 26px; color: #c4cce1; line-height: 1.65; }
+    .panel { padding: 22px; border: 1px solid #ffffff20; border-radius: 20px; background: #0c1530a8; }
+    .hidden { display: none !important; }
+    label { display: block; margin-bottom: 8px; color: #dce4ff; font-weight: 700; }
+    input[type="text"] { width: 100%; padding: 14px 16px; border: 2px solid #4f6091; border-radius: 12px; outline: none; background: #111c3c; color: white; }
+    input[type="text"]:focus { border-color: #9c8cff; box-shadow: 0 0 0 3px #9c8cff33; }
+    .primary, .answer {
+      border: 0;
+      border-radius: 13px;
+      color: #171331;
+      font-weight: 850;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .primary { width: 100%; margin-top: 14px; padding: 15px 18px; background: linear-gradient(100deg, #a99aff, #74e6d1); }
+    .primary:hover, .answer:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+    .mission { margin: 10px 0 8px; color: #aebce4; font-weight: 750; }
+    .question { margin: 0 0 20px; font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 900; text-align: center; }
+    .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .answer { min-height: 60px; background: #ecebff; font-size: 1.35rem; }
+    .answer:disabled { cursor: default; opacity: .8; }
+    .feedback { min-height: 28px; margin: 16px 0 0; color: #d9e3ff; font-weight: 700; text-align: center; }
+    .progress { height: 8px; margin: 0 0 20px; overflow: hidden; border-radius: 99px; background: #ffffff18; }
+    .progress span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a99aff, #74e6d1); transition: width .3s ease; }
+    .result { text-align: center; }
+    .result-icon { margin-bottom: 10px; font-size: 4rem; }
+    .result h2 { margin: 0 0 8px; font-size: 2rem; }
+    .result p { color: #c4cce1; line-height: 1.6; }
+    .small { margin-top: 20px; color: #9ca9cc; font-size: .9rem; text-align: center; }
+    @media (max-width: 420px) { body { padding: 14px; } .panel { padding: 17px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="game" aria-labelledby="title">
+    <div class="topline"><div class="brand">🚀 Akademi Penjelajah</div><div class="score" id="scoreBadge" aria-live="polite">⭐ 0</div></div>
+    <h1 id="title">Misi Bintang Angka</h1>
+    <p class="intro">Bantu pesawat luar angkasa mengumpulkan bintang! Jawab 10 soal matematika sebelum bahan bakar habis.</p>
+
+    <section class="panel" id="welcome" aria-label="Mulai permainan">
+      <label for="playerName">Nama penjelajah</label>
+      <input id="playerName" type="text" maxlength="20" autocomplete="given-name" placeholder="Contoh: Rani">
+      <button class="primary" id="startButton" type="button">Mulai Misi 🚀</button>
+      <p class="feedback" id="welcomeFeedback" role="status"></p>
+    </section>
+
+    <section class="panel hidden" id="quiz" aria-label="Soal matematika" aria-live="polite">
+      <div class="progress" aria-label="Kemajuan misi"><span id="progressBar"></span></div>
+      <div class="mission" id="missionLabel">Soal 1 dari 10</div>
+      <p class="question" id="question">8 + 5 = ?</p>
+      <div class="answers" id="answers"></div>
+      <p class="feedback" id="quizFeedback" role="status"></p>
+    </section>
+
+    <section class="panel result hidden" id="result" aria-live="polite"></section>
+    <p class="small">Pilih jawaban yang benar untuk mendapatkan bintang. Semangat, penjelajah!</p>
+  </main>
+
+  <script>
+    (() => {
+      const totalQuestions = 10;
+      const welcome = document.getElementById('welcome');
+      const quiz = document.getElementById('quiz');
+      const result = document.getElementById('result');
+      const nameInput = document.getElementById('playerName');
+      const scoreBadge = document.getElementById('scoreBadge');
+      const feedback = document.getElementById('quizFeedback');
+      let playerName = '';
+      let score = 0;
+      let questionNumber = 0;
+      let correctAnswer = 0;
+      let acceptingAnswer = false;
+
+      function makeQuestion() {
+        const operation = Math.random() < 0.5 ? '+' : '−';
+        let first = Math.floor(Math.random() * 20) + 1;
+        let second = Math.floor(Math.random() * 20) + 1;
+        if (operation === '−' && second > first) [first, second] = [second, first];
+        correctAnswer = operation === '+' ? first + second : first - second;
+        document.getElementById('question').textContent = `${first} ${operation} ${second} = ?`;
+        document.getElementById('missionLabel').textContent = `Soal ${questionNumber + 1} dari ${totalQuestions}`;
+        document.getElementById('progressBar').style.width = `${(questionNumber / totalQuestions) * 100}%`;
+
+        const choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+          const offset = Math.floor(Math.random() * 11) - 5;
+          choices.add(Math.max(0, correctAnswer + (offset === 0 ? 6 : offset)));
+        }
+        const shuffled = [...choices].sort(() => Math.random() - 0.5);
+        const container = document.getElementById('answers');
+        container.replaceChildren();
+        shuffled.forEach(value => {
+          const button = document.createElement('button');
+          button.className = 'answer';
+          button.type = 'button';
+          button.textContent = value;
+          button.addEventListener('click', () => answerQuestion(value));
+          container.appendChild(button);
+        });
+        feedback.textContent = '';
+        acceptingAnswer = true;
+      }
+
+      function answerQuestion(value) {
+        if (!acceptingAnswer) return;
+        acceptingAnswer = false;
+        const buttons = document.querySelectorAll('.answer');
+        buttons.forEach(button => { button.disabled = true; });
+        if (value === correctAnswer) {
+          score++;
+          scoreBadge.textContent = `⭐ ${score}`;
+          feedback.textContent = 'Tepat sekali! Bintang berhasil dikumpulkan ✨';
+        } else {
+          feedback.textContent = `Belum tepat — jawaban yang benar adalah ${correctAnswer}. Tetap semangat!`;
+        }
+        questionNumber++;
+        window.setTimeout(() => {
+          if (questionNumber >= totalQuestions) showResult();
+          else makeQuestion();
+        }, 1100);
+      }
+
+      function showResult() {
+        quiz.classList.add('hidden');
+        result.classList.remove('hidden');
+        document.getElementById('progressBar').style.width = '100%';
+        const title = document.createElement('h2');
+        const icon = document.createElement('div');
+        icon.className = 'result-icon';
+        icon.textContent = score >= 8 ? '🏆' : score >= 5 ? '🌟' : '🚀';
+        title.textContent = `Misi selesai, ${playerName}!`;
+        const message = document.createElement('p');
+        message.textContent = `Kamu mengumpulkan ${score} dari ${totalQuestions} bintang. ${score >= 8 ? 'Luar biasa, kamu ahli matematika!' : score >= 5 ? 'Kerja bagus! Terus berlatih ya.' : 'Latihan lagi dan kamu pasti makin hebat!'}`;
+        const restart = document.createElement('button');
+        restart.className = 'primary';
+        restart.type = 'button';
+        restart.textContent = 'Main Lagi 🔄';
+        restart.addEventListener('click', resetGame);
+        result.replaceChildren(icon, title, message, restart);
+      }
+
+      function resetGame() {
+        score = 0;
+        questionNumber = 0;
+        scoreBadge.textContent = '⭐ 0';
+        result.classList.add('hidden');
+        welcome.classList.remove('hidden');
+        nameInput.focus();
+      }
+
+      function startGame() {
+        const name = nameInput.value.trim();
+        const welcomeFeedback = document.getElementById('welcomeFeedback');
+        if (!name) {
+          welcomeFeedback.textContent = 'Masukkan namamu dulu untuk memulai misi.';
+          nameInput.focus();
+          return;
+        }
+        playerName = name;
+        score = 0;
+        questionNumber = 0;
+        scoreBadge.textContent = '⭐ 0';
+        welcome.classList.add('hidden');
+        result.classList.add('hidden');
+        quiz.classList.remove('hidden');
+        makeQuestion();
+      }
+
+      document.getElementById('startButton').addEventListener('click', startGame);
+      nameInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') startGame();
+      });
+    })();
+  </script>
+</body>
+</html>
